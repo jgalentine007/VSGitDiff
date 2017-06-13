@@ -95,8 +95,26 @@ namespace VSGitDiff
         /// <param name="e">Event args.</param>
         private void MenuItemCallback(object sender, EventArgs e)
         {
-            IGitProvider git = new Git2Sharp();
-            SelectedItemFilePaths();
+            string unifiedDiff = "";
+            var git = new GitHarness();
+            var dte = GetDTE2();
+
+            // Get unified diff(s)
+            var paths = SelectedItemFilePaths(dte);
+            foreach (var path in paths)
+            {                
+                unifiedDiff += git.Diff(path) + Environment.NewLine + Environment.NewLine;
+            }            
+            
+            // Create a new Visual Studio document containing the unified diff(s)
+            dte.ItemOperations.NewFile(@"General\Text File", "unified.diff");
+            Document doc = dte.ActiveDocument;
+            TextDocument textDoc = (TextDocument)doc.Object();
+            var editPoint = textDoc.CreateEditPoint();
+            editPoint.Insert(unifiedDiff);
+
+            // Set the document as 'saved' even though it is not, to allow easy closure.
+            doc.Saved = true;
         }
 
         /// <summary>
@@ -112,11 +130,10 @@ namespace VSGitDiff
         /// Returns the file paths of selected items in the Visual Studio solution explorer.
         /// </summary>
         /// <returns>List of file paths</returns>
-        private List<string> SelectedItemFilePaths()
+        private List<string> SelectedItemFilePaths(EnvDTE80.DTE2 dte)
         {
-            List<string> paths = new List<string>();
-            var dte = GetDTE2();
-
+            List<string> paths = new List<string>();            
+            
             if (dte != null)
             {
                 UIHierarchy solution = dte.ToolWindows.SolutionExplorer;
