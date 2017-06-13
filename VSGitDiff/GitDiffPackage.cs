@@ -40,6 +40,7 @@ namespace VSGitDiff
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(GitDiffPackage.PackageGuidString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
+    [ProvideAutoLoad(Microsoft.VisualStudio.Shell.Interop.UIContextGuids80.SolutionExists)]
     public sealed class GitDiffPackage : Package
     {
         /// <summary>
