@@ -20,6 +20,11 @@ namespace VSGitDiff
     internal sealed class GitDiff
     {
         /// <summary>
+        /// Static DTE object.
+        /// </summary>
+        private static EnvDTE80.DTE2 dte;        
+
+        /// <summary>
         /// Command ID.
         /// </summary>
         public const int CommandId = 0x0100;
@@ -41,6 +46,8 @@ namespace VSGitDiff
         /// <param name="package">Owner package, not null.</param>
         private GitDiff(Package package)
         {
+            dte = GetDTE2();
+
             if (package == null)
             {
                 throw new ArgumentNullException("package");
@@ -97,7 +104,6 @@ namespace VSGitDiff
         {
             string unifiedDiff = "";
             var git = new GitHarness();
-            var dte = GetDTE2();
 
             // Get unified diff(s)
             var paths = SelectedItemFilePaths(dte);
@@ -120,7 +126,7 @@ namespace VSGitDiff
         /// <summary>
         /// Returns a static DTE2 debugging object.
         /// </summary>
-        /// <returns>DTE2 debugging object</returns>
+        /// <returns>DTE2 debugging object.</returns>
         private static EnvDTE80.DTE2 GetDTE2()
         {
             return Package.GetGlobalService(typeof(DTE)) as EnvDTE80.DTE2;
@@ -129,7 +135,7 @@ namespace VSGitDiff
         /// <summary>
         /// Returns the file paths of selected items in the Visual Studio solution explorer.
         /// </summary>
-        /// <returns>List of file paths</returns>
+        /// <returns>List of file paths.</returns>
         private List<string> SelectedItemFilePaths(EnvDTE80.DTE2 dte)
         {
             List<string> paths = new List<string>();            
