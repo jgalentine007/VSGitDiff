@@ -95,6 +95,7 @@ namespace VSGitDiff
         /// <param name="e">Event args.</param>
         private void MenuItemCallback(object sender, EventArgs e)
         {
+            IGitProvider git = new Git2Sharp();)            
             SelectedItemFilePaths();
         }
 
