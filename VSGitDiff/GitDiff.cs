@@ -9,6 +9,8 @@ using System.ComponentModel.Design;
 using System.Globalization;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using EnvDTE;
+using System.Collections.Generic;
 
 namespace VSGitDiff
 {
@@ -93,17 +95,43 @@ namespace VSGitDiff
         /// <param name="e">Event args.</param>
         private void MenuItemCallback(object sender, EventArgs e)
         {
-            string message = string.Format(CultureInfo.CurrentCulture, "Inside {0}.MenuItemCallback()", this.GetType().FullName);
-            string title = "GitDiff";
+            SelectedItemFilePaths();
+        }
 
-            // Show a message box to prove we were here
-            VsShellUtilities.ShowMessageBox(
-                this.ServiceProvider,
-                message,
-                title,
-                OLEMSGICON.OLEMSGICON_INFO,
-                OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+        /// <summary>
+        /// Returns a static DTE2 debugging object.
+        /// </summary>
+        /// <returns>DTE2 debugging object</returns>
+        private static EnvDTE80.DTE2 GetDTE2()
+        {
+            return Package.GetGlobalService(typeof(DTE)) as EnvDTE80.DTE2;
+        }
+
+        /// <summary>
+        /// Returns the file paths of selected items in the Visual Studio solution explorer.
+        /// </summary>
+        /// <returns>List of file paths</returns>
+        private List<string> SelectedItemFilePaths()
+        {
+            List<string> paths = new List<string>();
+            var dte = GetDTE2();
+
+            if (dte != null)
+            {
+                UIHierarchy solution = dte.ToolWindows.SolutionExplorer;
+                Array selectedItems = (Array)solution.SelectedItems;
+
+                if (selectedItems != null)
+                {
+                    foreach (UIHierarchyItem item in selectedItems)
+                    {
+                        ProjectItem projectItem = item.Object as ProjectItem;
+                        paths.Add(projectItem.Properties.Item("FullPath").Value.ToString());
+                    }
+                }
+            }
+
+            return paths;
         }
     }
 }
