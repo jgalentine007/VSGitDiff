@@ -45,9 +45,7 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
         private GitDiff(Package package)
-        {
-            dte = GetDTE2();
-
+        {           
             if (package == null)
             {
                 throw new ArgumentNullException("package");
@@ -62,6 +60,8 @@ namespace VSGitDiff
                 var menuItem = new MenuCommand(this.MenuItemCallback, menuCommandID);
                 commandService.AddCommand(menuItem);
             }
+
+            dte = GetDTE2();            
         }
 
         /// <summary>
@@ -103,13 +103,15 @@ namespace VSGitDiff
         private void MenuItemCallback(object sender, EventArgs e)
         {
             string unifiedDiff = "";
-            var git = new GitHarness();
+            var git = new Git2Sharp();
 
             // Get unified diff(s)
             var paths = SelectedItemFilePaths(dte);
-            foreach (var path in paths)
+            foreach (string path in paths)
             {                
-                unifiedDiff += git.Diff(path) + Environment.NewLine + Environment.NewLine;
+                if(paths.Count > 1)
+                    unifiedDiff += Environment.NewLine + Environment.NewLine;
+                unifiedDiff += git.Diff(path);
             }            
             
             // Create a new Visual Studio document containing the unified diff(s)
