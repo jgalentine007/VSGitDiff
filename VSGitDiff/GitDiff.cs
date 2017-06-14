@@ -20,6 +20,11 @@ namespace VSGitDiff
     internal sealed class GitDiff
     {
         /// <summary>
+        /// Static DTE object.
+        /// </summary>
+        private static EnvDTE80.DTE2 dte;        
+
+        /// <summary>
         /// Command ID.
         /// </summary>
         public const int CommandId = 0x0100;
@@ -40,7 +45,7 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
         private GitDiff(Package package)
-        {
+        {           
             if (package == null)
             {
                 throw new ArgumentNullException("package");
@@ -55,6 +60,8 @@ namespace VSGitDiff
                 var menuItem = new MenuCommand(this.MenuItemCallback, menuCommandID);
                 commandService.AddCommand(menuItem);
             }
+
+            dte = GetDTE2();            
         }
 
         /// <summary>
@@ -96,14 +103,15 @@ namespace VSGitDiff
         private void MenuItemCallback(object sender, EventArgs e)
         {
             string unifiedDiff = "";
-            var git = new GitHarness();
-            var dte = GetDTE2();
+            var git = new Git2Sharp();
 
             // Get unified diff(s)
             var paths = SelectedItemFilePaths(dte);
-            foreach (var path in paths)
+            foreach (string path in paths)
             {                
-                unifiedDiff += git.Diff(path) + Environment.NewLine + Environment.NewLine;
+                if(paths.Count > 1)
+                    unifiedDiff += Environment.NewLine + Environment.NewLine;
+                unifiedDiff += git.Diff(path);
             }            
             
             // Create a new Visual Studio document containing the unified diff(s)
@@ -120,7 +128,7 @@ namespace VSGitDiff
         /// <summary>
         /// Returns a static DTE2 debugging object.
         /// </summary>
-        /// <returns>DTE2 debugging object</returns>
+        /// <returns>DTE2 debugging object.</returns>
         private static EnvDTE80.DTE2 GetDTE2()
         {
             return Package.GetGlobalService(typeof(DTE)) as EnvDTE80.DTE2;
@@ -129,7 +137,7 @@ namespace VSGitDiff
         /// <summary>
         /// Returns the file paths of selected items in the Visual Studio solution explorer.
         /// </summary>
-        /// <returns>List of file paths</returns>
+        /// <returns>List of file paths.</returns>
         private List<string> SelectedItemFilePaths(EnvDTE80.DTE2 dte)
         {
             List<string> paths = new List<string>();            
