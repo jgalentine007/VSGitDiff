@@ -3,10 +3,14 @@
   <Metadata>
     <Identity Id="VSGitDiff.Jonathan Galentine.d5d61ff8-f8ae-4a06-92be-b0bbedc36e2f" Version="1.0" Language="en-US" Publisher="Jonathan Galentine" />
     <DisplayName>VSGitDiff</DisplayName>
-    <Description>Empty VSIX Project.</Description>
+    <Description xml:space="preserve">Visual Studio extension that displays a Git unified diff for the selected file.</Description>
+    <MoreInfo>https://github.com/jgalentine007/VSGitDiff</MoreInfo>
+    <Icon>Resources\GitDiffPackageSmall.ico</Icon>
+    <PreviewImage>Resources\GitDiffPackage.ico</PreviewImage>
+    <Tags>Git;diff;unified</Tags>
   </Metadata>
   <Installation>
-    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[14.0]" />
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[14.0, 15.0]" />
   </Installation>
   <Dependencies>
     <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
