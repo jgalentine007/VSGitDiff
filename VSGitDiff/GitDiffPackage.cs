@@ -66,11 +66,11 @@ namespace VSGitDiff
         /// where you can put all the initialization code that rely on services provided by VisualStudio.
         /// </summary>
         protected override void Initialize()
-        {
+        {            
             GitDiff.Initialize(this);
-            base.Initialize();
+            base.Initialize();            
         }
 
-        #endregion
+        #endregion        
     }
 }

@@ -57,7 +57,8 @@ namespace VSGitDiff
             if (commandService != null)
             {
                 var menuCommandID = new CommandID(CommandSet, CommandId);
-                var menuItem = new MenuCommand(this.MenuItemCallback, menuCommandID);
+                var menuItem = new OleMenuCommand(this.MenuItemCallback, menuCommandID);
+                menuItem.BeforeQueryStatus += new EventHandler(MenuItemCallbackBeforeQuery);
                 commandService.AddCommand(menuItem);
             }
 
@@ -91,6 +92,12 @@ namespace VSGitDiff
         public static void Initialize(Package package)
         {
             Instance = new GitDiff(package);
+        }
+
+        void MenuItemCallbackBeforeQuery(object sender, EventArgs e)
+        {
+            OleMenuCommand myCommand = (OleMenuCommand)sender;
+            myCommand.Visible = true;
         }
 
         /// <summary>
