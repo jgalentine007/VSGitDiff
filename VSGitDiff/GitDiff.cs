@@ -145,11 +145,26 @@ namespace VSGitDiff
 
             // Get unified diff(s)
             var paths = SelectedItemFilePaths(dte);
+            // todo fix this ugly mess below
+            int index = 0;
             foreach (string path in paths)
-            {                
-                if(paths.Count > 1)
+            {
+                bool underSCC = dte.SourceControl.IsItemUnderSCC(path);
+
+                if (index > 0)
                     unifiedDiff += Environment.NewLine + Environment.NewLine;
-                unifiedDiff += git.Diff(path);
+
+                if (underSCC)
+                {
+                    string diff = git.Diff(path);
+                    if (diff != "")
+                        unifiedDiff += diff;
+                    else
+                        unifiedDiff += $"{path} - no changes found.";
+                }
+                else
+                    unifiedDiff += $"{path} - file is not under source control.";
+                index++;
             }            
             
             // Create a new Visual Studio document containing the unified diff(s)
@@ -190,7 +205,7 @@ namespace VSGitDiff
                     foreach (UIHierarchyItem item in selectedItems)
                     {
                         ProjectItem projectItem = item.Object as ProjectItem;
-                        paths.Add(projectItem.Properties.Item("FullPath").Value.ToString());
+                        paths.Add(projectItem.Properties.Item("FullPath").Value.ToString());                        
                     }
                 }
             }
