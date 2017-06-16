@@ -47,9 +47,11 @@
               <CommandFlag>DefaultInvisible</CommandFlag>
               <CommandFlag>DynamicVisibility</CommandFlag>
           If you do not want an image next to your command, remove the Icon node /> -->
-      <Button guid="guidGitDiffPackageCmdSet" id="GitDiffId" priority="0x0100" type="Button">
+      <Button guid="guidGitDiffPackageCmdSet" id="GitDiffId" priority="0x0100" type="Button">        
         <Parent guid="guidGitDiffPackageCmdSet" id="GitDiffMenuGroup" />
         <Icon guid="guidImages" id="gdIcon" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
           <ButtonText>GitDiff</ButtonText>
         </Strings>
@@ -66,13 +68,13 @@
       <Bitmap guid="guidImages" href="Resources\GitDiff.png" usedList="gdIcon"/>
     </Bitmaps>
   </Commands>
-  
+    
   <CommandPlacements>
     <!-- Add GitDiff buttons to SCC menus -->
     <CommandPlacement guid="guidGitDiffPackageCmdSet" id="GitDiffId" priority="0x0001">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_ITEM_SCC"/>
     </CommandPlacement>    
-  </CommandPlacements>
+  </CommandPlacements> 
   
   <Symbols>
     <!-- This is the package guid. -->

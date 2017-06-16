@@ -11,6 +11,8 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using EnvDTE;
 using System.Collections.Generic;
+using Microsoft.VisualStudio.Settings;
+using Microsoft.VisualStudio.Shell.Settings;
 
 namespace VSGitDiff
 {
@@ -19,6 +21,11 @@ namespace VSGitDiff
     /// </summary>
     internal sealed class GitDiff
     {
+        /// <summary>
+        /// Source Code Provider Interface
+        /// </summary>
+        private static IVsGetScciProviderInterface scciProvider;
+
         /// <summary>
         /// Static DTE object.
         /// </summary>
@@ -57,7 +64,8 @@ namespace VSGitDiff
             if (commandService != null)
             {
                 var menuCommandID = new CommandID(CommandSet, CommandId);
-                var menuItem = new MenuCommand(this.MenuItemCallback, menuCommandID);
+                var menuItem = new OleMenuCommand(this.MenuItemCallback, menuCommandID);
+                menuItem.BeforeQueryStatus += new EventHandler(MenuItemCallbackBeforeQuery);
                 commandService.AddCommand(menuItem);
             }
 
@@ -88,9 +96,39 @@ namespace VSGitDiff
         /// Initializes the singleton instance of the command.
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
-        public static void Initialize(Package package)
+        public static void Initialize(Package package, ref IVsGetScciProviderInterface _scciProvider)
         {
+            scciProvider = _scciProvider;
             Instance = new GitDiff(package);
+        }
+
+
+        /// <summary>
+        /// Event handler called before command is loaded / displayed
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void MenuItemCallbackBeforeQuery(object sender, EventArgs e)
+        {            
+            // Check if current source code provider matches MS Git provider guid
+            Guid pGuid;
+
+            try
+            {
+                scciProvider.GetSourceControlProviderID(out pGuid);
+            }
+            catch
+            {
+                // fatal error occured retrieving provider ID, set guid to all zeros
+                pGuid = new Guid();
+            }
+
+            OleMenuCommand myCommand = (OleMenuCommand)sender;
+
+            if (pGuid == new Guid("{11b8e6d7-c08b-4385-b321-321078cdd1f8}"))
+                myCommand.Visible = true;
+            else
+                myCommand.Visible = false;
         }
 
         /// <summary>
@@ -107,11 +145,26 @@ namespace VSGitDiff
 
             // Get unified diff(s)
             var paths = SelectedItemFilePaths(dte);
+            // todo fix this ugly mess below
+            int index = 0;
             foreach (string path in paths)
-            {                
-                if(paths.Count > 1)
+            {
+                bool underSCC = dte.SourceControl.IsItemUnderSCC(path);
+
+                if (index > 0)
                     unifiedDiff += Environment.NewLine + Environment.NewLine;
-                unifiedDiff += git.Diff(path);
+
+                if (underSCC)
+                {
+                    string diff = git.Diff(path);
+                    if (diff != "")
+                        unifiedDiff += diff;
+                    else
+                        unifiedDiff += $"{path} - no changes found.";
+                }
+                else
+                    unifiedDiff += $"{path} - file is not under source control.";
+                index++;
             }            
             
             // Create a new Visual Studio document containing the unified diff(s)
@@ -152,7 +205,7 @@ namespace VSGitDiff
                     foreach (UIHierarchyItem item in selectedItems)
                     {
                         ProjectItem projectItem = item.Object as ProjectItem;
-                        paths.Add(projectItem.Properties.Item("FullPath").Value.ToString());
+                        paths.Add(projectItem.Properties.Item("FullPath").Value.ToString());                        
                     }
                 }
             }
