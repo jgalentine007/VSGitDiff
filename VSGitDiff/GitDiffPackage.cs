@@ -40,9 +40,10 @@ namespace VSGitDiff
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(GitDiffPackage.PackageGuidString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
-    [ProvideAutoLoad(Microsoft.VisualStudio.Shell.Interop.UIContextGuids80.SolutionExists)]
+    [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
     public sealed class GitDiffPackage : Package
     {
+        
         /// <summary>
         /// GitDiffPackage GUID string.
         /// </summary>
@@ -66,11 +67,21 @@ namespace VSGitDiff
         /// where you can put all the initialization code that rely on services provided by VisualStudio.
         /// </summary>
         protected override void Initialize()
-        {            
-            GitDiff.Initialize(this);
-            base.Initialize();            
+        {
+            // pass in SCC provider service
+            try
+            {
+                var scciProvider = GetService(typeof(IVsRegisterScciProvider)) as IVsGetScciProviderInterface;
+                GitDiff.Initialize(this, ref scciProvider);
+                base.Initialize();
+            }
+            catch (Exception ex)
+            {
+                //todo error notification / logging
+            }
         }
-
+        
         #endregion        
     }
 }
+

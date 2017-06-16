@@ -11,6 +11,8 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using EnvDTE;
 using System.Collections.Generic;
+using Microsoft.VisualStudio.Settings;
+using Microsoft.VisualStudio.Shell.Settings;
 
 namespace VSGitDiff
 {
@@ -19,6 +21,11 @@ namespace VSGitDiff
     /// </summary>
     internal sealed class GitDiff
     {
+        /// <summary>
+        /// Source Code Provider Interface
+        /// </summary>
+        private static IVsGetScciProviderInterface scciProvider;
+
         /// <summary>
         /// Static DTE object.
         /// </summary>
@@ -89,15 +96,39 @@ namespace VSGitDiff
         /// Initializes the singleton instance of the command.
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
-        public static void Initialize(Package package)
+        public static void Initialize(Package package, ref IVsGetScciProviderInterface _scciProvider)
         {
+            scciProvider = _scciProvider;
             Instance = new GitDiff(package);
         }
 
+
+        /// <summary>
+        /// Event handler called before command is loaded / displayed
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         void MenuItemCallbackBeforeQuery(object sender, EventArgs e)
-        {
+        {            
+            // Check if current source code provider matches MS Git provider guid
+            Guid pGuid;
+
+            try
+            {
+                scciProvider.GetSourceControlProviderID(out pGuid);
+            }
+            catch
+            {
+                // fatal error occured retrieving provider ID, set guid to all zeros
+                pGuid = new Guid();
+            }
+
             OleMenuCommand myCommand = (OleMenuCommand)sender;
-            myCommand.Visible = true;
+
+            if (pGuid == new Guid("{11b8e6d7-c08b-4385-b321-321078cdd1f8}"))
+                myCommand.Visible = true;
+            else
+                myCommand.Visible = false;
         }
 
         /// <summary>
