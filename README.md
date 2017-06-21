@@ -2,7 +2,7 @@
 Visual Studio extension that displays a Git unified diff for the selected file.
 
 ## Requirements ##
-Visual Studio 2015 or later
+Visual Studio 2015 or later  
 Microsoft Git Source Control Provider
 
 ## Usage ##
