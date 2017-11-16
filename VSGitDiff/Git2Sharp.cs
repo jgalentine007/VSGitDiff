@@ -45,9 +45,9 @@ namespace VSGitDiff
             using (var repo = new Repository(repoPath))
             {
                 // extract file content from repo and convert to blob to normalize encodings etc.
-                string content = FileContentFromRepoHead(filePath, repo);
-                Blob dbBlob = GitBlobFromString(content);
-                Blob newBlob = GitBlobFromString(stringToCompare);
+                string content = FileContentFromRepoHead(repo, filePath);
+                Blob dbBlob = GitBlobFromString(repo, content);
+                Blob newBlob = GitBlobFromString(repo, stringToCompare);
 
                 var diff = repo.Diff.Compare(dbBlob, newBlob);
                 return diff.Patch;
@@ -81,7 +81,7 @@ namespace VSGitDiff
         /// <param name="filePath">File path (relative to repository.)</param>
         /// <param name="repo">Git repository.</param>
         /// <returns></returns>
-        private string FileContentFromRepoHead(string filePath, Repository repo)
+        private string FileContentFromRepoHead(Repository repo, string filePath)
         {
             var tip = repo.Head.Tip;
             var treeEntry = tip.Tree[filePath];
@@ -100,15 +100,12 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="content">Content to encode.</param>
         /// <returns></returns>
-        private Blob GitBlobFromString(string content)
+        private Blob GitBlobFromString(Repository repo, string content)
         {
-            using (var repo = new Repository())
-            {
-                var contentBytes = System.Text.Encoding.UTF8.GetBytes(content);
-                var memStream = new MemoryStream(contentBytes);
-                var blob = repo.ObjectDatabase.CreateBlob(memStream);
-                return blob;
-            }
+            var contentBytes = System.Text.Encoding.UTF8.GetBytes(content);
+            var memStream = new MemoryStream(contentBytes);
+            var blob = repo.ObjectDatabase.CreateBlob(memStream);
+            return blob;
         }
     }
 }

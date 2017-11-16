@@ -29,7 +29,7 @@ namespace VSGitDiff
         /// <summary>
         /// Static DTE object.
         /// </summary>
-        private static EnvDTE80.DTE2 dte;        
+        private static EnvDTE80.DTE2 dte;
 
         /// <summary>
         /// Command ID.
@@ -53,7 +53,7 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
         private GitDiff(Package package)
-        {           
+        {
             if (package == null)
             {
                 throw new ArgumentNullException("package");
@@ -66,16 +66,16 @@ namespace VSGitDiff
             {
                 var menuCommandID = new CommandID(CommandSet, CmdID_SavedHead);
                 var menuItem = new OleMenuCommand(this.SavedHeadCallback, menuCommandID);
-                menuItem.BeforeQueryStatus += new EventHandler(MenuItemCallbackBeforeQuery);
+                menuItem.BeforeQueryStatus += new EventHandler(SavedHeadCallbackQuery);
                 commandService.AddCommand(menuItem);
 
                 menuCommandID = new CommandID(CommandSet, CmdID_WorkingHead);
                 menuItem = new OleMenuCommand(this.WorkingHeadCallback, menuCommandID);
-                menuItem.BeforeQueryStatus += new EventHandler(MenuItemCallbackBeforeQuery);
+                menuItem.BeforeQueryStatus += new EventHandler(WorkingHeadCallbackQuery);
                 commandService.AddCommand(menuItem);
             }
 
-            dte = GetDTE2();            
+            dte = GetDTE2();
         }
 
         /// <summary>
@@ -108,14 +108,8 @@ namespace VSGitDiff
             Instance = new GitDiff(package);
         }
 
-
-        /// <summary>
-        /// Event handler called before command is loaded / displayed
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void MenuItemCallbackBeforeQuery(object sender, EventArgs e)
-        {            
+        private bool GitIsSCC()
+        {
             // Check if current source code provider matches MS Git provider guid
             Guid pGuid;
 
@@ -129,9 +123,39 @@ namespace VSGitDiff
                 pGuid = new Guid();
             }
 
-            OleMenuCommand myCommand = (OleMenuCommand)sender;
-
             if (pGuid == new Guid("{11b8e6d7-c08b-4385-b321-321078cdd1f8}"))
+                return true;
+            else
+                return false;
+        }
+
+        /// <summary>
+        /// Event handler called before saved head command is loaded / displayed
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void SavedHeadCallbackQuery(object sender, EventArgs e)
+        {
+            var myCommand = (OleMenuCommand)sender;
+
+            if (GitIsSCC())
+                myCommand.Visible = true;
+            else
+                myCommand.Visible = false;
+        }
+
+        /// <summary>
+        /// Event handler called before working head command is loaded / displayed 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void WorkingHeadCallbackQuery(object sender, EventArgs e)
+        {
+            var myCommand = (OleMenuCommand)sender;
+            var selected = dte.SelectedItems.Item(1).ProjectItem;
+            int selectedCount = dte.SelectedItems.Count;
+
+            if (selectedCount == 1 && GitIsSCC() && selected.IsOpen && !selected.Saved)
                 myCommand.Visible = true;
             else
                 myCommand.Visible = false;
@@ -171,8 +195,8 @@ namespace VSGitDiff
                 else
                     unifiedDiff += $"{path} - file is not under source control.";
                 index++;
-            }            
-            
+            }
+
             // Create a new Visual Studio document containing the unified diff(s)
             dte.ItemOperations.NewFile(@"General\Text File", "unified.diff");
             Document doc = dte.ActiveDocument;
@@ -194,7 +218,7 @@ namespace VSGitDiff
             // Get unified diff(s)
             var path = selected.Properties.Item("FullPath").Value.ToString();
             // todo fix this ugly mess below
-            
+
             if (selected.IsOpen)
             {
                 var txtDoc = (TextDocument)selected.Document.Object("TextDocument");
@@ -239,21 +263,20 @@ namespace VSGitDiff
         /// <returns>List of file paths.</returns>
         private List<string> SelectedItemFilePaths(EnvDTE80.DTE2 dte)
         {
-            List<string> paths = new List<string>();            
-            
-            if (dte != null)
-            {
-                UIHierarchy solution = dte.ToolWindows.SolutionExplorer;
-                Array selectedItems = (Array)solution.SelectedItems;
+            List<string> paths = new List<string>();
 
-                if (selectedItems != null)
+            if (dte == null)
+                return paths;
+
+            UIHierarchy solution = dte.ToolWindows.SolutionExplorer;
+            Array selectedItems = (Array)solution.SelectedItems;
+
+            if (selectedItems != null)
+            {
+                foreach (UIHierarchyItem item in selectedItems)
                 {
-                    foreach (UIHierarchyItem item in selectedItems)
-                    {
-                        ProjectItem projectItem = item.Object as ProjectItem;
-                        
-                        paths.Add(projectItem.Properties.Item("FullPath").Value.ToString());                        
-                    }
+                    ProjectItem projectItem = item.Object as ProjectItem;
+                    paths.Add(projectItem.Properties.Item("FullPath").Value.ToString());
                 }
             }
 
