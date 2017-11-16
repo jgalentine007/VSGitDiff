@@ -9,5 +9,6 @@ namespace VSGitDiff
     interface IGitProvider
     {
         string Diff(string filePath);
+        string Diff(string relativeFilePath, string stringToCompare);
     }
 }
