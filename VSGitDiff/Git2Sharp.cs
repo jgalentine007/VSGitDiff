@@ -49,8 +49,13 @@ namespace VSGitDiff
                 Blob dbBlob = GitBlobFromString(repo, content);
                 Blob newBlob = GitBlobFromString(repo, stringToCompare);
 
+                // get diff and generate unified diff header
                 var diff = repo.Diff.Compare(dbBlob, newBlob);
-                return diff.Patch;
+                string unifiedDiff = $"--- a/{filePath}" + Environment.NewLine;
+                unifiedDiff += $"+++ b/{filePath} *unsaved*" + Environment.NewLine;
+                unifiedDiff += diff.Patch;
+
+                return unifiedDiff;
             }
         }
 

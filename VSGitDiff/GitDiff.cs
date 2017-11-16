@@ -162,9 +162,7 @@ namespace VSGitDiff
         }
 
         /// <summary>
-        /// This function is the callback used to execute the command when the menu item is clicked.
-        /// See the constructor to see how the menu item is associated with this function using
-        /// OleMenuCommandService service and MenuCommand class.
+        /// Creates a unified diff comparing the selected saved file to itself in the HEAD commit.
         /// </summary>
         /// <param name="sender">Event sender.</param>
         /// <param name="e">Event args.</param>
@@ -179,12 +177,10 @@ namespace VSGitDiff
             int index = 0;
             foreach (string path in paths)
             {
-                bool underSCC = dte.SourceControl.IsItemUnderSCC(path);
-
                 if (index > 0)
                     unifiedDiff += Environment.NewLine + Environment.NewLine;
 
-                if (underSCC)
+                if (dte.SourceControl.IsItemUnderSCC(path))
                 {
                     string diff = git.Diff(path);
                     if (diff != "")
@@ -194,30 +190,25 @@ namespace VSGitDiff
                 }
                 else
                     unifiedDiff += $"{path} - file is not under source control.";
+
                 index++;
             }
 
-            // Create a new Visual Studio document containing the unified diff(s)
-            dte.ItemOperations.NewFile(@"General\Text File", "unified.diff");
-            Document doc = dte.ActiveDocument;
-            TextDocument textDoc = (TextDocument)doc.Object();
-            var editPoint = textDoc.CreateEditPoint();
-            editPoint.Insert(unifiedDiff);
-
-            // Set the document as 'saved' even though it is not, to allow easy closure.
-            doc.Saved = true;
+            NewVSDiffDocument(unifiedDiff);
         }
 
+        /// <summary>
+        /// Creates a unified diff comparing the selected unsaved modified file to itself in the HEAD commit. 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void WorkingHeadCallback(object sender, EventArgs e)
         {
             string unifiedDiff = "";
             var git = new Git2Sharp();
 
             var selected = dte.SelectedItems.Item(1).ProjectItem;
-
-            // Get unified diff(s)
             var path = selected.Properties.Item("FullPath").Value.ToString();
-            // todo fix this ugly mess below
 
             if (selected.IsOpen)
             {
@@ -236,16 +227,25 @@ namespace VSGitDiff
                 else
                     unifiedDiff += $"{path} - file is not under source control.";
 
-                // Create a new Visual Studio document containing the unified diff(s)
-                dte.ItemOperations.NewFile(@"General\Text File", "unified.diff");
-                Document doc = dte.ActiveDocument;
-                TextDocument textDoc = (TextDocument)doc.Object();
-                var editPoint = textDoc.CreateEditPoint();
-                editPoint.Insert(unifiedDiff);
-
-                // Set the document as 'saved' even though it is not, to allow easy closure.
-                doc.Saved = true;
+                NewVSDiffDocument(unifiedDiff);
             }
+        }
+
+        /// <summary>
+        /// Creates a new text document in the visual studio documents window.
+        /// </summary>
+        /// <param name="content"></param>
+        private void NewVSDiffDocument(string content)
+        {
+            // Create a new Visual Studio document containing the unified diff(s)
+            dte.ItemOperations.NewFile(@"General\Text File", "unified.diff");
+            Document doc = dte.ActiveDocument;
+            TextDocument textDoc = (TextDocument)doc.Object();
+            var editPoint = textDoc.CreateEditPoint();
+            editPoint.Insert(content);
+
+            // Set the document as 'saved' even though it is not, to allow easy closure.
+            doc.Saved = true;
         }
 
         /// <summary>
