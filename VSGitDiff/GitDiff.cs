@@ -34,7 +34,8 @@ namespace VSGitDiff
         /// <summary>
         /// Command ID.
         /// </summary>
-        public const int CommandId = 0x0100;
+        public const int CmdID_SavedHead = 0x0100;
+        public const int CmdID_WorkingHead = 0x0101;
 
         /// <summary>
         /// Command menu group (command set GUID).
@@ -63,8 +64,13 @@ namespace VSGitDiff
             OleMenuCommandService commandService = this.ServiceProvider.GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
             if (commandService != null)
             {
-                var menuCommandID = new CommandID(CommandSet, CommandId);
-                var menuItem = new OleMenuCommand(this.MenuItemCallback, menuCommandID);
+                var menuCommandID = new CommandID(CommandSet, CmdID_SavedHead);
+                var menuItem = new OleMenuCommand(this.SavedHeadCallback, menuCommandID);
+                menuItem.BeforeQueryStatus += new EventHandler(MenuItemCallbackBeforeQuery);
+                commandService.AddCommand(menuItem);
+
+                menuCommandID = new CommandID(CommandSet, CmdID_WorkingHead);
+                menuItem = new OleMenuCommand(this.WorkingHeadCallback, menuCommandID);
                 menuItem.BeforeQueryStatus += new EventHandler(MenuItemCallbackBeforeQuery);
                 commandService.AddCommand(menuItem);
             }
@@ -138,7 +144,7 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="sender">Event sender.</param>
         /// <param name="e">Event args.</param>
-        private void MenuItemCallback(object sender, EventArgs e)
+        private void SavedHeadCallback(object sender, EventArgs e)
         {
             string unifiedDiff = "";
             var git = new Git2Sharp();
@@ -178,6 +184,46 @@ namespace VSGitDiff
             doc.Saved = true;
         }
 
+        private void WorkingHeadCallback(object sender, EventArgs e)
+        {
+            string unifiedDiff = "";
+            var git = new Git2Sharp();
+
+            var selected = dte.SelectedItems.Item(1).ProjectItem;
+
+            // Get unified diff(s)
+            var path = selected.Properties.Item("FullPath").Value.ToString();
+            // todo fix this ugly mess below
+            
+            if (selected.IsOpen)
+            {
+                var txtDoc = (TextDocument)selected.Document.Object("TextDocument");
+                var editPnt = txtDoc.StartPoint.CreateEditPoint();
+                string docText = editPnt.GetText(txtDoc.EndPoint);
+
+                if (dte.SourceControl.IsItemUnderSCC(path))
+                {
+                    string diff = git.Diff(path, docText);
+                    if (diff != "")
+                        unifiedDiff += diff;
+                    else
+                        unifiedDiff += $"{path} - no changes found.";
+                }
+                else
+                    unifiedDiff += $"{path} - file is not under source control.";
+
+                // Create a new Visual Studio document containing the unified diff(s)
+                dte.ItemOperations.NewFile(@"General\Text File", "unified.diff");
+                Document doc = dte.ActiveDocument;
+                TextDocument textDoc = (TextDocument)doc.Object();
+                var editPoint = textDoc.CreateEditPoint();
+                editPoint.Insert(unifiedDiff);
+
+                // Set the document as 'saved' even though it is not, to allow easy closure.
+                doc.Saved = true;
+            }
+        }
+
         /// <summary>
         /// Returns a static DTE2 debugging object.
         /// </summary>
@@ -205,6 +251,7 @@ namespace VSGitDiff
                     foreach (UIHierarchyItem item in selectedItems)
                     {
                         ProjectItem projectItem = item.Object as ProjectItem;
+                        
                         paths.Add(projectItem.Properties.Item("FullPath").Value.ToString());                        
                     }
                 }
