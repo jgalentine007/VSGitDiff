@@ -1,18 +1,9 @@
-﻿//------------------------------------------------------------------------------
-// <copyright file="GitDiff.cs" company="Company">
-//     Copyright (c) Company.  All rights reserved.
-// </copyright>
-//------------------------------------------------------------------------------
-
-using System;
-using System.ComponentModel.Design;
-using System.Globalization;
+﻿using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using EnvDTE;
+using System;
 using System.Collections.Generic;
-using Microsoft.VisualStudio.Settings;
-using Microsoft.VisualStudio.Shell.Settings;
+using System.ComponentModel.Design;
 
 namespace VSGitDiff
 {
@@ -30,13 +21,12 @@ namespace VSGitDiff
         /// Static DTE object.
         /// </summary>
         private static EnvDTE80.DTE2 dte;
-
-        /// <summary>
-        /// Command ID.
-        /// </summary>
-        public const int CmdID_SavedHead = 0x0100;
-        public const int CmdID_WorkingHead = 0x0101;
+       
+        public const int CmdID_SavedHeadSolution = 0x0100;
+        public const int CmdID_WorkingHeadSolution = 0x0101;
         public const int CmdID_SavedHeadCodeWin = 0x0102;
+        public const int CmdID_WorkingHeadCodeWin = 0x0103;
+        public const int CmdID_SavedHeadSourceChanges = 0x0104;
 
         /// <summary>
         /// Command menu group (command set GUID).
@@ -47,46 +37,6 @@ namespace VSGitDiff
         /// VS Package that provides this command, not null.
         /// </summary>
         private readonly Package package;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="GitDiff"/> class.
-        /// Adds our command handlers for menu (commands must exist in the command table file)
-        /// </summary>
-        /// <param name="package">Owner package, not null.</param>
-        private GitDiff(Package package)
-        {
-            if (package == null)
-            {
-                throw new ArgumentNullException("package");
-            }
-
-            this.package = package;
-
-            OleMenuCommandService commandService = this.ServiceProvider.GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
-            if (commandService != null)
-            {
-                var menuCommandID = new CommandID(CommandSet, CmdID_SavedHead);
-                var menuItem = new OleMenuCommand(this.SavedHeadCallback, menuCommandID);
-                menuItem.BeforeQueryStatus += new EventHandler(SavedHeadCallbackQuery);
-                commandService.AddCommand(menuItem);
-
-                menuCommandID = new CommandID(CommandSet, CmdID_WorkingHead);
-                menuItem = new OleMenuCommand(this.WorkingHeadCallback, menuCommandID);
-                menuItem.BeforeQueryStatus += new EventHandler(WorkingHeadCallbackQuery);
-                commandService.AddCommand(menuItem);
-
-                menuCommandID = new CommandID(CommandSet, CmdID_SavedHeadCodeWin);
-                menuItem = new OleMenuCommand(this.Blahcallback, menuCommandID);
-                commandService.AddCommand(menuItem);
-            }
-
-            dte = GetDTE2();
-        }
-
-        private void Blahcallback(object sender, EventArgs e)
-        {
-            string hello = "";
-        }
 
         /// <summary>
         /// Gets the instance of the command.
@@ -119,30 +69,40 @@ namespace VSGitDiff
         }
 
         /// <summary>
-        /// Check if Microsoft Git Provider is the selected source code control.
+        /// Initializes a new instance of the <see cref="GitDiff"/> class.
+        /// Adds our command handlers for menu (commands must exist in the command table file)
         /// </summary>
-        /// <returns></returns>
-        private bool GitIsSCC()
+        /// <param name="package">Owner package, not null.</param>
+        private GitDiff(Package package)
         {
-            // Check if current source code provider matches MS Git provider guid
-            Guid pGuid;
-
-            try
+            if (package == null)
             {
-                scciProvider.GetSourceControlProviderID(out pGuid);
-            }
-            catch
-            {
-                // fatal error occured retrieving provider ID, set guid to all zeros
-                pGuid = new Guid();
+                throw new ArgumentNullException("package");
             }
 
-            if (pGuid == new Guid("{11b8e6d7-c08b-4385-b321-321078cdd1f8}"))
-                return true;
-            else
-                return false;
+            this.package = package;
+
+            OleMenuCommandService commandService = this.ServiceProvider.GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
+            if (commandService != null)
+            {
+                var menuCommandID = new CommandID(CommandSet, CmdID_SavedHeadSolution);
+                var menuItem = new OleMenuCommand(this.SavedHeadCallback, menuCommandID);
+                menuItem.BeforeQueryStatus += new EventHandler(SavedHeadCallbackQuery);
+                commandService.AddCommand(menuItem);
+
+                menuCommandID = new CommandID(CommandSet, CmdID_WorkingHeadSolution);
+                menuItem = new OleMenuCommand(this.WorkingHeadCallback, menuCommandID);
+                menuItem.BeforeQueryStatus += new EventHandler(WorkingHeadCallbackQuery);
+                commandService.AddCommand(menuItem);
+
+                menuCommandID = new CommandID(CommandSet, CmdID_SavedHeadCodeWin);
+                menuItem = new OleMenuCommand(this.Blahcallback, menuCommandID);
+                commandService.AddCommand(menuItem);
+            }
+
+            dte = GetDTE2();
         }
-
+  
         /// <summary>
         /// Event handler called before saved head command is loaded / displayed
         /// </summary>
@@ -274,6 +234,31 @@ namespace VSGitDiff
 
             // Set the document as 'saved' even though it is not, to allow easy closure.
             doc.Saved = true;
+        }
+
+        /// <summary>
+        /// Check if Microsoft Git Provider is the selected source code control.
+        /// </summary>
+        /// <returns></returns>
+        private bool GitIsSCC()
+        {
+            // Check if current source code provider matches MS Git provider guid
+            Guid pGuid;
+
+            try
+            {
+                scciProvider.GetSourceControlProviderID(out pGuid);
+            }
+            catch
+            {
+                // fatal error occured retrieving provider ID, set guid to all zeros
+                pGuid = new Guid();
+            }
+
+            if (pGuid == new Guid("{11b8e6d7-c08b-4385-b321-321078cdd1f8}"))
+                return true;
+            else
+                return false;
         }
 
         /// <summary>
