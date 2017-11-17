@@ -39,6 +39,11 @@
     <!--Buttons section. -->
     <!--This section defines the elements the user can interact with, like a menu command or a button
         or combo box in a toolbar. -->
+    <Groups>
+      <Group guid="guidGitDiffPackageCmdSet" id="codeWinMenuGroup" priority ="0x0600">
+        <Parent guid="sourceControlMenuSet" id="sourceControlCodeWindowMenu"/>
+      </Group>
+    </Groups>
     <Buttons>
       <!--To define a menu group you have to specify its ID, the parent menu and its display priority.
           The command is visible and enabled by default. If you need to change the visibility, status, etc, you can use
@@ -51,11 +56,12 @@
         <Parent guid="guidGitDiffPackageCmdSet" id="GitDiffMenuGroup" />
         <Icon guid="guidImages" id="gdIcon" />
         <CommandFlag>DynamicVisibility</CommandFlag>
-        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag> 
         <Strings>
           <ButtonText>Diff Saved->Head</ButtonText>
         </Strings>
       </Button>
+
       <Button guid="guidGitDiffPackageCmdSet" id="GitDiffWorkingHead" priority="0x0101" type="Button">
         <Parent guid="guidGitDiffPackageCmdSet" id="GitDiffMenuGroup" />
         <Icon guid="guidImages" id="gdIcon" />
@@ -65,6 +71,15 @@
           <ButtonText>Diff Working->Head</ButtonText>
         </Strings>
       </Button>
+
+      <Button guid="guidGitDiffPackageCmdSet" id="GitDiffSavedHeadCodeWin" priority="0x0102" type="Button">
+        <Parent guid="guidGitDiffPackageCmdSet" id="codeWinMenuGroup" />
+        <Icon guid="guidImages" id="gdIcon" />       
+        <Strings>
+          <ButtonText>Diff Saved->Head</ButtonText>
+        </Strings>
+      </Button> 
+      
     </Buttons>
 
     <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -80,23 +95,34 @@
     
   <CommandPlacements>
     <!-- Add GitDiff buttons to SCC menus -->
+    
     <CommandPlacement guid="guidGitDiffPackageCmdSet" id="GitDiffSavedHead" priority="0x0001">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_ITEM_SCC"/>
     </CommandPlacement>
+    
     <CommandPlacement guid="guidGitDiffPackageCmdSet" id="GitDiffWorkingHead" priority="0x0001">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_ITEM_SCC"/>
     </CommandPlacement>
+
+    
   </CommandPlacements> 
   
   <Symbols>
     <!-- This is the package guid. -->
     <GuidSymbol name="guidGitDiffPackage" value="{6c7e4e31-deed-4c9f-bed3-1a8b9360b855}" />
 
+    <GuidSymbol name="sourceControlMenuSet" value ="{57735d06-c920-4415-a2e0-7d6e6fbdfa99}">
+      <IDSymbol name="sourceControlCodeWindowMenu" value ="0xF001"/>
+      <IDSymbol name="sourceControlChangesMenu" value ="0xF011"/>
+    </GuidSymbol>
+    
     <!-- This is the guid used to group the menu commands together -->
     <GuidSymbol name="guidGitDiffPackageCmdSet" value="{be3bf61c-3d52-4384-8f96-388ecbfe929e}">
       <IDSymbol name="GitDiffMenuGroup" value="0x1020" />
+      <IDSymbol name="codeWinMenuGroup" value="0x1021" />
       <IDSymbol name="GitDiffSavedHead" value="0x0100" />
       <IDSymbol name="GitDiffWorkingHead" value="0x0101" />
+      <IDSymbol name="GitDiffSavedHeadCodeWin" value="0x0102" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{0e6b0d6c-8eed-4699-9626-893ea3ccf887}" >

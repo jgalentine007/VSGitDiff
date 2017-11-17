@@ -36,6 +36,7 @@ namespace VSGitDiff
         /// </summary>
         public const int CmdID_SavedHead = 0x0100;
         public const int CmdID_WorkingHead = 0x0101;
+        public const int CmdID_SavedHeadCodeWin = 0x0102;
 
         /// <summary>
         /// Command menu group (command set GUID).
@@ -73,9 +74,18 @@ namespace VSGitDiff
                 menuItem = new OleMenuCommand(this.WorkingHeadCallback, menuCommandID);
                 menuItem.BeforeQueryStatus += new EventHandler(WorkingHeadCallbackQuery);
                 commandService.AddCommand(menuItem);
+
+                menuCommandID = new CommandID(CommandSet, CmdID_SavedHeadCodeWin);
+                menuItem = new OleMenuCommand(this.Blahcallback, menuCommandID);
+                commandService.AddCommand(menuItem);
             }
 
             dte = GetDTE2();
+        }
+
+        private void Blahcallback(object sender, EventArgs e)
+        {
+            string hello = "";
         }
 
         /// <summary>
@@ -108,6 +118,10 @@ namespace VSGitDiff
             Instance = new GitDiff(package);
         }
 
+        /// <summary>
+        /// Check if Microsoft Git Provider is the selected source code control.
+        /// </summary>
+        /// <returns></returns>
         private bool GitIsSCC()
         {
             // Check if current source code provider matches MS Git provider guid
@@ -168,33 +182,40 @@ namespace VSGitDiff
         /// <param name="e">Event args.</param>
         private void SavedHeadCallback(object sender, EventArgs e)
         {
-            string unifiedDiff = "";
-            var git = new Git2Sharp();
-
-            // Get unified diff(s)
-            var paths = SelectedItemFilePaths(dte);
-            // todo fix this ugly mess below
-            int index = 0;
-            foreach (string path in paths)
+            try
             {
-                if (index > 0)
-                    unifiedDiff += Environment.NewLine + Environment.NewLine;
+                string unifiedDiff = "";
+                var git = new Git2Sharp();
 
-                if (dte.SourceControl.IsItemUnderSCC(path))
+                // Get unified diff(s)
+                var paths = SelectedItemFilePaths(dte);
+                // todo fix this ugly mess below
+                int index = 0;
+                foreach (string path in paths)
                 {
-                    string diff = git.Diff(path);
-                    if (diff != "")
-                        unifiedDiff += diff;
+                    if (index > 0)
+                        unifiedDiff += Environment.NewLine + Environment.NewLine;
+
+                    if (dte.SourceControl.IsItemUnderSCC(path))
+                    {
+                        string diff = git.Diff(path);
+                        if (diff != "")
+                            unifiedDiff += diff;
+                        else
+                            unifiedDiff += $"{path} - no changes found.";
+                    }
                     else
-                        unifiedDiff += $"{path} - no changes found.";
+                        unifiedDiff += $"{path} - file is not under source control.";
+
+                    index++;
                 }
-                else
-                    unifiedDiff += $"{path} - file is not under source control.";
 
-                index++;
+                NewVSDiffDocument(unifiedDiff);
             }
-
-            NewVSDiffDocument(unifiedDiff);
+            catch (Exception)
+            {
+                
+            }
         }
 
         /// <summary>
@@ -204,30 +225,37 @@ namespace VSGitDiff
         /// <param name="e"></param>
         private void WorkingHeadCallback(object sender, EventArgs e)
         {
-            string unifiedDiff = "";
-            var git = new Git2Sharp();
-
-            var selected = dte.SelectedItems.Item(1).ProjectItem;
-            var path = selected.Properties.Item("FullPath").Value.ToString();
-
-            if (selected.IsOpen)
+            try
             {
-                var txtDoc = (TextDocument)selected.Document.Object("TextDocument");
-                var editPnt = txtDoc.StartPoint.CreateEditPoint();
-                string docText = editPnt.GetText(txtDoc.EndPoint);
+                string unifiedDiff = "";
+                var git = new Git2Sharp();
 
-                if (dte.SourceControl.IsItemUnderSCC(path))
+                var selected = dte.SelectedItems.Item(1).ProjectItem;
+                var path = selected.Properties.Item("FullPath").Value.ToString();
+
+                if (selected.IsOpen)
                 {
-                    string diff = git.Diff(path, docText);
-                    if (diff != "")
-                        unifiedDiff += diff;
-                    else
-                        unifiedDiff += $"{path} - no changes found.";
-                }
-                else
-                    unifiedDiff += $"{path} - file is not under source control.";
+                    var txtDoc = (TextDocument)selected.Document.Object("TextDocument");
+                    var editPnt = txtDoc.StartPoint.CreateEditPoint();
+                    string docText = editPnt.GetText(txtDoc.EndPoint);
 
-                NewVSDiffDocument(unifiedDiff);
+                    if (dte.SourceControl.IsItemUnderSCC(path))
+                    {
+                        string diff = git.Diff(path, docText);
+                        if (diff != "")
+                            unifiedDiff += diff;
+                        else
+                            unifiedDiff += $"{path} - no changes found.";
+                    }
+                    else
+                        unifiedDiff += $"{path} - file is not under source control.";
+
+                    NewVSDiffDocument(unifiedDiff);
+                }
+            }
+            catch (Exception)
+            {
+
             }
         }
 
