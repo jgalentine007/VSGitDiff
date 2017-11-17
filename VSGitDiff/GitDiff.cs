@@ -21,7 +21,7 @@ namespace VSGitDiff
         /// Static DTE object.
         /// </summary>
         private static EnvDTE80.DTE2 dte;
-       
+
         public const int CmdID_SavedHeadSolution = 0x0100;
         public const int CmdID_WorkingHeadSolution = 0x0101;
         public const int CmdID_SavedHeadCodeWin = 0x0102;
@@ -86,29 +86,35 @@ namespace VSGitDiff
             if (commandService != null)
             {
                 var menuCommandID = new CommandID(CommandSet, CmdID_SavedHeadSolution);
-                var menuItem = new OleMenuCommand(this.SavedHeadCallback, menuCommandID);
-                menuItem.BeforeQueryStatus += new EventHandler(SavedHeadCallbackQuery);
+                var menuItem = new OleMenuCommand(this.SavedHeadSolutionCallback, menuCommandID);
+                menuItem.BeforeQueryStatus += new EventHandler(SavedHeadSolutionQuery);
                 commandService.AddCommand(menuItem);
 
                 menuCommandID = new CommandID(CommandSet, CmdID_WorkingHeadSolution);
-                menuItem = new OleMenuCommand(this.WorkingHeadCallback, menuCommandID);
-                menuItem.BeforeQueryStatus += new EventHandler(WorkingHeadCallbackQuery);
+                menuItem = new OleMenuCommand(this.WorkingHeadSolutionCallback, menuCommandID);
+                menuItem.BeforeQueryStatus += new EventHandler(WorkingHeadSolutionQuery);
                 commandService.AddCommand(menuItem);
 
                 menuCommandID = new CommandID(CommandSet, CmdID_SavedHeadCodeWin);
-                menuItem = new OleMenuCommand(this.Blahcallback, menuCommandID);
+                menuItem = new OleMenuCommand(this.SavedHeadCodeWinCallback, menuCommandID);
+                menuItem.BeforeQueryStatus += new EventHandler(SavedHeadCodeWinQuery);
+                commandService.AddCommand(menuItem);
+
+                menuCommandID = new CommandID(CommandSet, CmdID_WorkingHeadCodeWin);
+                menuItem = new OleMenuCommand(this.WorkingHeadCodeWinCallback, menuCommandID);
+                menuItem.BeforeQueryStatus += new EventHandler(WorkingHeadCodeWinQuery);
                 commandService.AddCommand(menuItem);
             }
 
             dte = GetDTE2();
         }
-  
+
         /// <summary>
         /// Event handler called before saved head command is loaded / displayed
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void SavedHeadCallbackQuery(object sender, EventArgs e)
+        void SavedHeadSolutionQuery(object sender, EventArgs e)
         {
             var myCommand = (OleMenuCommand)sender;
 
@@ -123,7 +129,7 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void WorkingHeadCallbackQuery(object sender, EventArgs e)
+        void WorkingHeadSolutionQuery(object sender, EventArgs e)
         {
             var myCommand = (OleMenuCommand)sender;
             var selected = dte.SelectedItems.Item(1).ProjectItem;
@@ -136,11 +142,56 @@ namespace VSGitDiff
         }
 
         /// <summary>
+        /// Event handler called before saved head command is loaded / displayed
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void SavedHeadCodeWinQuery(object sender, EventArgs e)
+        {
+            var myCommand = (OleMenuCommand)sender;
+
+            if (GitIsSCC())
+            {
+                bool underSCC = dte.SourceControl.IsItemUnderSCC(dte.ActiveDocument.Path);
+
+                if (underSCC)
+                    myCommand.Visible = true;
+                else
+                    myCommand.Visible = false;
+            }
+            else
+                myCommand.Visible = false;
+        }
+
+        /// <summary>
+        /// Event handler called before saved head command is loaded / displayed
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void WorkingHeadCodeWinQuery(object sender, EventArgs e)
+        {
+            var myCommand = (OleMenuCommand)sender;
+
+            if (GitIsSCC())
+            {
+                bool underSCC = dte.SourceControl.IsItemUnderSCC(dte.ActiveDocument.Path);
+                bool saved = dte.ActiveDocument.Saved;
+
+                if (underSCC && !saved)
+                    myCommand.Visible = true;
+                else
+                    myCommand.Visible = false;
+            }
+            else
+                myCommand.Visible = false; ;
+        }
+
+        /// <summary>
         /// Creates a unified diff comparing the selected saved file to itself in the HEAD commit.
         /// </summary>
         /// <param name="sender">Event sender.</param>
         /// <param name="e">Event args.</param>
-        private void SavedHeadCallback(object sender, EventArgs e)
+        private void SavedHeadSolutionCallback(object sender, EventArgs e)
         {
             try
             {
@@ -174,7 +225,7 @@ namespace VSGitDiff
             }
             catch (Exception)
             {
-                
+
             }
         }
 
@@ -183,7 +234,7 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void WorkingHeadCallback(object sender, EventArgs e)
+        private void WorkingHeadSolutionCallback(object sender, EventArgs e)
         {
             try
             {
@@ -212,6 +263,66 @@ namespace VSGitDiff
 
                     NewVSDiffDocument(unifiedDiff);
                 }
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// Creates a unified diff comparing the selected saved file to itself in the HEAD commit.
+        /// </summary>
+        /// <param name="sender">Event sender.</param>
+        /// <param name="e">Event args.</param>
+        private void SavedHeadCodeWinCallback(object sender, EventArgs e)
+        {
+            try
+            {
+                string unifiedDiff = "";
+                var git = new Git2Sharp();
+
+                var path = dte.ActiveDocument.Path + dte.ActiveDocument.Name;
+
+                string diff = git.Diff(path);
+                if (diff != "")
+                    unifiedDiff += diff;
+                else
+                    unifiedDiff += $"{path} - no changes found.";
+
+                NewVSDiffDocument(unifiedDiff);
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// Creates a unified diff comparing the selected saved file to itself in the HEAD commit.
+        /// </summary>
+        /// <param name="sender">Event sender.</param>
+        /// <param name="e">Event args.</param>
+        private void WorkingHeadCodeWinCallback(object sender, EventArgs e)
+        {
+            try
+            {
+                string unifiedDiff = "";
+                var git = new Git2Sharp();
+
+                var path = dte.ActiveDocument.Path + dte.ActiveDocument.Name;
+               
+                var txtDoc = (TextDocument)dte.ActiveDocument.Object("TextDocument");
+                var editPnt = txtDoc.StartPoint.CreateEditPoint();
+                string docText = editPnt.GetText(txtDoc.EndPoint);
+
+                string diff = git.Diff(path, docText);
+                if (diff != "")
+                    unifiedDiff += diff;
+                else
+                    unifiedDiff += $"{path} - no changes found.";
+
+                NewVSDiffDocument(unifiedDiff);
             }
             catch (Exception)
             {
