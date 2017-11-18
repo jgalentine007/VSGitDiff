@@ -12,5 +12,10 @@ namespace VSGitDiff
         {
             throw new NotImplementedException();
         }
+
+        public string Diff(string relativeFilePath, string stringToCompare)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

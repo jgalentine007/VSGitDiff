@@ -93,7 +93,6 @@
       <ResourceName>Menus.ctmenu</ResourceName>
       <SubType>Designer</SubType>
     </VSCTCompile>
-    <Content Include="index.html" />
     <Content Include="Resources\GitDiff.png" />
     <Content Include="Resources\GitDiffPackageSmall.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
