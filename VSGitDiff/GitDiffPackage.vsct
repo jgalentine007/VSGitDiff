@@ -82,11 +82,11 @@
   <CommandPlacements>
     <!-- Add GitDiff buttons to SCC menus -->
 
-    <CommandPlacement guid="guidGitDiffPackageCmdSet" id="SavedHeadSolution" priority="0x0001">
+    <CommandPlacement guid="guidGitDiffPackageCmdSet" id="SavedHeadSolution" priority="0x0601">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_ITEM_SCC"/>
     </CommandPlacement>
 
-    <CommandPlacement guid="guidGitDiffPackageCmdSet" id="WorkingHeadSolution" priority="0x0001">
+    <CommandPlacement guid="guidGitDiffPackageCmdSet" id="WorkingHeadSolution" priority="0x0602">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_ITEM_SCC"/>
     </CommandPlacement>
     
@@ -95,7 +95,6 @@
       <Parent guid="guidGitDiffPackageCmdSet" id="sourceChangesMenuGroup"/>
     </CommandPlacement>
     -->
-
   </CommandPlacements>
 
   <Symbols>

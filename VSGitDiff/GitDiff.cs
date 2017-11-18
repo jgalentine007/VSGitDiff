@@ -76,9 +76,7 @@ namespace VSGitDiff
         private GitDiff(Package package)
         {
             if (package == null)
-            {
                 throw new ArgumentNullException("package");
-            }
 
             this.package = package;
 
