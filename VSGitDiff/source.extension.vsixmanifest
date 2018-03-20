@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="VSGitDiff.Jonathan Galentine.d5d61ff8-f8ae-4a06-92be-b0bbedc36e2f" Version="1.1" Language="en-US" Publisher="Jonathan Galentine" />
+        <Identity Id="VSGitDiff.Jonathan Galentine.d5d61ff8-f8ae-4a06-92be-b0bbedc36e2f" Version="1.2" Language="en-US" Publisher="Jonathan Galentine" />
         <DisplayName>VSGitDiff</DisplayName>
         <Description xml:space="preserve">Visual Studio extension that displays a Git unified diff for the selected file.</Description>
         <MoreInfo>https://github.com/jgalentine007/VSGitDiff</MoreInfo>

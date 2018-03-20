@@ -13,7 +13,7 @@
       </Group>
       <Group guid="guidGitDiffPackageCmdSet" id="sourceChangesMenuGroup" priority ="0x0600">
         <Parent guid="sourceControlMenuSet" id="sourceControlChangesMenu"/>
-      </Group>
+      </Group>      
     </Groups>
     
     <Buttons>     
@@ -61,17 +61,18 @@
       </Button>
 
       <!-- These are buttons for the source control file changes context menu -->
-      <!--
       <Button guid="guidGitDiffPackageCmdSet" id="SavedHeadSourceChanges" priority="0x0100" type="Button">
         <Parent guid="guidGitDiffPackageCmdSet" id="sourceChangesMenuGroup" />
         <Icon guid="guidImages" id="gdIcon" />
+        <!--
         <CommandFlag>DynamicVisibility</CommandFlag>
         <CommandFlag>DefaultInvisible</CommandFlag>
+        -->
         <Strings>
           <ButtonText>Diff Saved->Head</ButtonText>
         </Strings>
       </Button>
-      -->
+
     </Buttons>
 
     <Bitmaps> 
@@ -81,7 +82,6 @@
 
   <CommandPlacements>
     <!-- Add GitDiff buttons to SCC menus -->
-
     <CommandPlacement guid="guidGitDiffPackageCmdSet" id="SavedHeadSolution" priority="0x0601">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_ITEM_SCC"/>
     </CommandPlacement>
@@ -89,12 +89,6 @@
     <CommandPlacement guid="guidGitDiffPackageCmdSet" id="WorkingHeadSolution" priority="0x0602">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_ITEM_SCC"/>
     </CommandPlacement>
-    
-    <!--
-    <CommandPlacement guid="guidGitDiffPackageCmdSet" id="SavedHeadSourceChanges" priority="0x0001">
-      <Parent guid="guidGitDiffPackageCmdSet" id="sourceChangesMenuGroup"/>
-    </CommandPlacement>
-    -->
   </CommandPlacements>
 
   <Symbols>

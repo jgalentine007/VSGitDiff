@@ -4,6 +4,8 @@ using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
+using Microsoft.TeamFoundation.Controls;
+using Microsoft.TeamFoundation.Git.Controls.Extensibility;
 
 namespace VSGitDiff
 {
@@ -102,6 +104,10 @@ namespace VSGitDiff
                 menuItem = new OleMenuCommand(this.WorkingHeadCodeWinCallback, menuCommandID);
                 menuItem.BeforeQueryStatus += new EventHandler(WorkingHeadCodeWinQuery);
                 commandService.AddCommand(menuItem);
+
+                menuCommandID = new CommandID(CommandSet, CmdID_SavedHeadSourceChanges);
+                menuItem = new OleMenuCommand(this.SavedHeadSolutionCallback, menuCommandID);                
+                commandService.AddCommand(menuItem);
             }
 
             dte = GetDTE2();
@@ -193,11 +199,18 @@ namespace VSGitDiff
         {
             try
             {
+                var myCommand = (OleMenuCommand)sender;
                 string unifiedDiff = "";
                 var git = new Git2Sharp();
 
                 // Get unified diff(s)
-                var paths = SelectedItemFilePaths(dte);
+                List<string> paths = new List<string>();
+
+                if (myCommand.CommandID.ID == CmdID_SavedHeadSourceChanges)
+                    paths = SelectedSCCFilePaths();
+                else if (myCommand.CommandID.ID == CmdID_SavedHeadSolution)
+                    paths = SelectedItemFilePaths(dte);
+
                 // todo fix this ugly mess below
                 int index = 0;
                 foreach (string path in paths)
@@ -402,6 +415,26 @@ namespace VSGitDiff
                 }
             }
 
+            return paths;
+        }
+
+        /// <summary>
+        /// Returns the file paths of the selected files in the Team Explorer - Changes window.
+        /// </summary>
+        /// <returns></returns>
+        private List<string> SelectedSCCFilePaths()
+        {
+            List<string> paths = new List<string>();                                
+            var teamExplorer = this.ServiceProvider.GetService(typeof(ITeamExplorer)) as ITeamExplorer;
+            var teamExplorerPage = teamExplorer.CurrentPage;
+            var changesExt = teamExplorerPage.GetExtensibilityService(typeof(IChangesExt3)) as IChangesExt3;
+            var changes = changesExt.SelectedUnstagedChanges;
+
+            foreach (IChangesPendingChangeItem change in changes)
+            {
+                paths.Add(change.SourceLocalItem);
+            }
+            
             return paths;
         }
     }
