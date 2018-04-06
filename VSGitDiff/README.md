@@ -2,7 +2,7 @@
 Visual Studio extension that displays a Git unified diff for the selected file.
 
 ## Requirements ##
-Visual Studio 2015 or later  
+Visual Studio 2017 or later  
 Microsoft Git Source Control Provider
 
 ## Usage ##
@@ -11,6 +11,7 @@ A new 'GitDiff' command will be added to the solution explorer context menu. You
 New Features in v1.2:
 
 * Add VSGitDiff buttons to team explorer changes window items
+* Drop support for Visual Studio 2015
 
 New features in v1.1:
 
