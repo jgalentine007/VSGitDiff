@@ -45,9 +45,9 @@ namespace VSGitDiff
         /// Adds our command handlers for menu (commands must exist in the command table file).
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
-        public static async System.Threading.Tasks.Task InitializeAsync(AsyncPackage package)
+        public static async System.Threading.Tasks.Task InitializeAsync(AsyncPackage package, System.Threading.CancellationToken cancellationToken)
         {
-            await package.JoinableTaskFactory.SwitchToMainThreadAsync();
+            await package.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken: cancellationToken);
 
             scciProvider = await package.GetServiceAsync(typeof(IVsRegisterScciProvider)) as IVsGetScciProviderInterface;
 

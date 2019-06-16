@@ -41,7 +41,7 @@ namespace VSGitDiff
         {
             try
             {
-                await GitDiff.InitializeAsync(this);
+                await GitDiff.InitializeAsync(this, cancellationToken);
             }
             catch (Exception ex)
             {
