@@ -6,13 +6,13 @@ using System.Runtime.InteropServices;
 
 namespace VSGitDiff
 {
-    [PackageRegistration(UseManagedResourcesOnly = true)]
+    [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [InstalledProductRegistration("#110", "#112", "1.1", IconResourceID = 400)] // Info on this package for Help/About
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(GitDiffPackage.PackageGuidString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
-    [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
-    public sealed class GitDiffPackage : Package
+    [ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
+    public sealed class GitDiffPackage : AsyncPackage
     {
         
         /// <summary>
@@ -37,14 +37,11 @@ namespace VSGitDiff
         /// Initialization of the package; this method is called right after the package is sited, so this is the place
         /// where you can put all the initialization code that rely on services provided by VisualStudio.
         /// </summary>
-        protected override void Initialize()
+        protected override async System.Threading.Tasks.Task InitializeAsync(System.Threading.CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            // pass in SCC provider service
             try
             {
-                var scciProvider = GetService(typeof(IVsRegisterScciProvider)) as IVsGetScciProviderInterface;
-                GitDiff.Initialize(this, ref scciProvider);
-                base.Initialize();
+                await GitDiff.InitializeAsync(this);
             }
             catch (Exception ex)
             {

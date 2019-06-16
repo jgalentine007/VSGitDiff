@@ -12,7 +12,7 @@ namespace VSGitDiff
     /// <summary>
     /// Command handler
     /// </summary>
-    internal sealed class GitDiff
+    internal static class GitDiff
     {
         /// <summary>
         /// Source Code Provider Interface
@@ -23,6 +23,11 @@ namespace VSGitDiff
         /// Static DTE object.
         /// </summary>
         private static EnvDTE80.DTE2 dte;
+
+        /// <summary>
+        /// ITeamExplorer Interface
+        /// </summary>
+        private static ITeamExplorer teamExplorer;
 
         public const int CmdID_SavedHeadSolution = 0x0100;
         public const int CmdID_WorkingHeadSolution = 0x0101;
@@ -36,81 +41,43 @@ namespace VSGitDiff
         public static readonly Guid CommandSet = new Guid("be3bf61c-3d52-4384-8f96-388ecbfe929e");
 
         /// <summary>
-        /// VS Package that provides this command, not null.
-        /// </summary>
-        private readonly Package package;
-
-        /// <summary>
-        /// Gets the instance of the command.
-        /// </summary>
-        public static GitDiff Instance
-        {
-            get;
-            private set;
-        }
-
-        /// <summary>
-        /// Gets the service provider from the owner package.
-        /// </summary>
-        private IServiceProvider ServiceProvider
-        {
-            get
-            {
-                return this.package;
-            }
-        }
-
-        /// <summary>
-        /// Initializes the singleton instance of the command.
+        /// Initializes static services of the command.
+        /// Adds our command handlers for menu (commands must exist in the command table file).
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
-        public static void Initialize(Package package, ref IVsGetScciProviderInterface _scciProvider)
+        public static async System.Threading.Tasks.Task InitializeAsync(AsyncPackage package)
         {
-            scciProvider = _scciProvider;
-            Instance = new GitDiff(package);
-        }
+            await package.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="GitDiff"/> class.
-        /// Adds our command handlers for menu (commands must exist in the command table file)
-        /// </summary>
-        /// <param name="package">Owner package, not null.</param>
-        private GitDiff(Package package)
-        {
-            if (package == null)
-                throw new ArgumentNullException("package");
+            scciProvider = await package.GetServiceAsync(typeof(IVsRegisterScciProvider)) as IVsGetScciProviderInterface;
 
-            this.package = package;
-
-            OleMenuCommandService commandService = this.ServiceProvider.GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
+            var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             if (commandService != null)
             {
-                var menuCommandID = new CommandID(CommandSet, CmdID_SavedHeadSolution);
-                var menuItem = new OleMenuCommand(this.SavedHeadSolutionCallback, menuCommandID);
-                menuItem.BeforeQueryStatus += new EventHandler(SavedHeadSolutionQuery);
-                commandService.AddCommand(menuItem);
-
-                menuCommandID = new CommandID(CommandSet, CmdID_WorkingHeadSolution);
-                menuItem = new OleMenuCommand(this.WorkingHeadSolutionCallback, menuCommandID);
-                menuItem.BeforeQueryStatus += new EventHandler(WorkingHeadSolutionQuery);
-                commandService.AddCommand(menuItem);
-
-                menuCommandID = new CommandID(CommandSet, CmdID_SavedHeadCodeWin);
-                menuItem = new OleMenuCommand(this.SavedHeadCodeWinCallback, menuCommandID);
-                menuItem.BeforeQueryStatus += new EventHandler(SavedHeadCodeWinQuery);
-                commandService.AddCommand(menuItem);
-
-                menuCommandID = new CommandID(CommandSet, CmdID_WorkingHeadCodeWin);
-                menuItem = new OleMenuCommand(this.WorkingHeadCodeWinCallback, menuCommandID);
-                menuItem.BeforeQueryStatus += new EventHandler(WorkingHeadCodeWinQuery);
-                commandService.AddCommand(menuItem);
-
-                menuCommandID = new CommandID(CommandSet, CmdID_SavedHeadSourceChanges);
-                menuItem = new OleMenuCommand(this.SavedHeadSolutionCallback, menuCommandID);                
-                commandService.AddCommand(menuItem);
+                AddMenuCommand(commandService, CmdID_SavedHeadSolution, SavedHeadSolutionCallback, SavedHeadSolutionQuery);
+                AddMenuCommand(commandService, CmdID_WorkingHeadSolution, WorkingHeadSolutionCallback, WorkingHeadSolutionQuery);
+                AddMenuCommand(commandService, CmdID_SavedHeadCodeWin, SavedHeadCodeWinCallback, SavedHeadCodeWinQuery);
+                AddMenuCommand(commandService, CmdID_WorkingHeadCodeWin, WorkingHeadCodeWinCallback, WorkingHeadCodeWinQuery);
+                AddMenuCommand(commandService, CmdID_SavedHeadSourceChanges, SavedHeadSolutionCallback, null);
             }
 
-            dte = GetDTE2();
+            teamExplorer = await package.GetServiceAsync(typeof(ITeamExplorer)) as ITeamExplorer;
+
+            dte = Package.GetGlobalService(typeof(DTE)) as EnvDTE80.DTE2;
+        }
+
+        /// <summary>
+        /// Adds a menu command for a given command ID, invocation handler, and status request handler.
+        /// </summary>
+        /// <param name="commandService">The service used to add handlers for menu commands.</param>
+        /// <param name="commandID">The numeric command ID.</param>
+        /// <param name="invokeHandler">The event handler called to execute the command.</param>
+        /// <param name="beforeQueryStatusHandler">The event handler called when a client requests the command status.</param>
+        private static void AddMenuCommand(OleMenuCommandService commandService, int commandID, EventHandler invokeHandler, EventHandler beforeQueryStatusHandler)
+        {
+            var menuCommandID = new CommandID(CommandSet, commandID);
+            var menuItem = new OleMenuCommand(invokeHandler, null, beforeQueryStatusHandler, menuCommandID);
+            commandService.AddCommand(menuItem);
         }
 
         /// <summary>
@@ -118,7 +85,7 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void SavedHeadSolutionQuery(object sender, EventArgs e)
+        private static void SavedHeadSolutionQuery(object sender, EventArgs e)
         {
             var myCommand = (OleMenuCommand)sender;
 
@@ -133,7 +100,7 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void WorkingHeadSolutionQuery(object sender, EventArgs e)
+        private static void WorkingHeadSolutionQuery(object sender, EventArgs e)
         {
             var myCommand = (OleMenuCommand)sender;
             var selected = dte.SelectedItems.Item(1).ProjectItem;
@@ -150,7 +117,7 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void SavedHeadCodeWinQuery(object sender, EventArgs e)
+        private static void SavedHeadCodeWinQuery(object sender, EventArgs e)
         {
             var myCommand = (OleMenuCommand)sender;
 
@@ -172,7 +139,7 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void WorkingHeadCodeWinQuery(object sender, EventArgs e)
+        private static void WorkingHeadCodeWinQuery(object sender, EventArgs e)
         {
             var myCommand = (OleMenuCommand)sender;
 
@@ -195,7 +162,7 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="sender">Event sender.</param>
         /// <param name="e">Event args.</param>
-        private void SavedHeadSolutionCallback(object sender, EventArgs e)
+        private static void SavedHeadSolutionCallback(object sender, EventArgs e)
         {
             try
             {
@@ -245,7 +212,7 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void WorkingHeadSolutionCallback(object sender, EventArgs e)
+        private static void WorkingHeadSolutionCallback(object sender, EventArgs e)
         {
             try
             {
@@ -286,7 +253,7 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="sender">Event sender.</param>
         /// <param name="e">Event args.</param>
-        private void SavedHeadCodeWinCallback(object sender, EventArgs e)
+        private static void SavedHeadCodeWinCallback(object sender, EventArgs e)
         {
             try
             {
@@ -314,7 +281,7 @@ namespace VSGitDiff
         /// </summary>
         /// <param name="sender">Event sender.</param>
         /// <param name="e">Event args.</param>
-        private void WorkingHeadCodeWinCallback(object sender, EventArgs e)
+        private static void WorkingHeadCodeWinCallback(object sender, EventArgs e)
         {
             try
             {
@@ -345,7 +312,7 @@ namespace VSGitDiff
         /// Creates a new text document in the visual studio documents window.
         /// </summary>
         /// <param name="content"></param>
-        private void NewVSDiffDocument(string content)
+        private static void NewVSDiffDocument(string content)
         {
             // Create a new Visual Studio document containing the unified diff(s)
             dte.ItemOperations.NewFile(@"General\Text File", "unified.diff");
@@ -362,7 +329,7 @@ namespace VSGitDiff
         /// Check if Microsoft Git Provider is the selected source code control.
         /// </summary>
         /// <returns></returns>
-        private bool GitIsSCC()
+        private static bool GitIsSCC()
         {
             // Check if current source code provider matches MS Git provider guid
             Guid pGuid;
@@ -384,19 +351,10 @@ namespace VSGitDiff
         }
 
         /// <summary>
-        /// Returns a static DTE2 debugging object.
-        /// </summary>
-        /// <returns>DTE2 debugging object.</returns>
-        private static EnvDTE80.DTE2 GetDTE2()
-        {
-            return Package.GetGlobalService(typeof(DTE)) as EnvDTE80.DTE2;
-        }
-
-        /// <summary>
         /// Returns the file paths of selected items in the Visual Studio solution explorer.
         /// </summary>
         /// <returns>List of file paths.</returns>
-        private List<string> SelectedItemFilePaths(EnvDTE80.DTE2 dte)
+        private static List<string> SelectedItemFilePaths(EnvDTE80.DTE2 dte)
         {
             List<string> paths = new List<string>();
 
@@ -422,10 +380,9 @@ namespace VSGitDiff
         /// Returns the file paths of the selected files in the Team Explorer - Changes window.
         /// </summary>
         /// <returns></returns>
-        private List<string> SelectedSCCFilePaths()
+        private static List<string> SelectedSCCFilePaths()
         {
             List<string> paths = new List<string>();                                
-            var teamExplorer = this.ServiceProvider.GetService(typeof(ITeamExplorer)) as ITeamExplorer;
             var teamExplorerPage = teamExplorer.CurrentPage;
             var changesExt = teamExplorerPage.GetExtensibilityService(typeof(IChangesExt3)) as IChangesExt3;
             var changes = changesExt.SelectedUnstagedChanges;
