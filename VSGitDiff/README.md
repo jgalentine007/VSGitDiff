@@ -8,6 +8,11 @@ Microsoft Git Source Control Provider
 ## Usage ##
 A new 'GitDiff' command will be added to the solution explorer context menu. You may highlight one or more files in the solution explorer window. The 'GitDiff' command will display a unified diff (Unix style) for each file in a new Visual Studio document. The unified diff consists of the changes between a file and the last commit. The Microsoft Git Source Control Provider must be selected as the current provider, and the file(s) to be diffed must be under source control.
 
+New Features in v1.3:
+
+* Add support for Visual Studio 2019
+* Migrate to AsyncPackage to support asynchronous autoloading
+
 New Features in v1.2:
 
 * Add VSGitDiff buttons to team explorer changes window items
@@ -19,7 +24,7 @@ New features in v1.1:
 * Add VSGitDiff buttons to code window source control context menu
 * Couple of bug fixes and code improvements
 
-Upcoming features for v1.3:
+Upcoming features for v1.4:
 
 * Refactoring and additional error logging (there is none!)
 
